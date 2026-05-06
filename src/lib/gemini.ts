@@ -2,7 +2,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { db } from "./firebase";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+function getAI() {
+    if (!aiInstance) {
+        aiInstance = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "missing_key" });
+    }
+    return aiInstance;
+}
 
 export interface MarkingResult {
   student_name: string;
@@ -92,7 +98,7 @@ Grading Scale:
 
 Return a JSON object analyzing their answers and providing the final score and grade.` });
 
-  const response = await ai.models.generateContent({
+  const response = await getAI().models.generateContent({
     model: "gemini-3.1-pro-preview",
     contents: { parts },
     config: {
