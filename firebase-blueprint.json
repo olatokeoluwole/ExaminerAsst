@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Administrator of the system",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" }
+      },
+      "required": ["email"]
+    },
+    "School": {
+      "title": "School",
+      "description": "Registered schools",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "maxStudents": { "type": "number" },
+        "registeredStudentsCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "name", "maxStudents", "registeredStudentsCount", "createdAt"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "A student registered in the school",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "className": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "createdAt"]
+    },
+    "Result": {
+      "title": "Result",
+      "description": "Grading result for a student",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string" },
+        "class": { "type": "string" },
+        "subject": { "type": "string" },
+        "score": { "type": "number" },
+        "grade": { "type": "string" },
+        "remarks": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentName", "subject", "score", "grade", "remarks", "createdAt"]
+    },
+    "KnowledgeBaseDoc": {
+      "title": "KnowledgeBaseDoc",
+      "description": "Knowledge base document metadata",
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "fileName": { "type": "string" },
+        "chunksCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["subject", "fileName", "chunksCount", "createdAt"]
+    },
+    "KnowledgeBaseChunk": {
+      "title": "KnowledgeBaseChunk",
+      "description": "Chunk of base64 document",
+      "type": "object",
+      "properties": {
+        "data": { "type": "string" }
+      },
+      "required": ["data"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "System administrators"
+    },
+    "/schools/{schoolId}": {
+      "schema": { "$ref": "#/entities/School" },
+      "description": "Registered schools"
+    },
+    "/schools/{schoolId}/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Students belonging to a school"
+    },
+    "/schools/{schoolId}/results/{resultId}": {
+      "schema": { "$ref": "#/entities/Result" },
+      "description": "Grading results for students"
+    },
+    "/knowledgeBase/{docId}": {
+      "schema": { "$ref": "#/entities/KnowledgeBaseDoc" },
+      "description": "Knowledge base documents for subjects"
+    },
+    "/knowledgeBase/{docId}/chunks/{chunkId}": {
+      "schema": { "$ref": "#/entities/KnowledgeBaseChunk" },
+      "description": "Chunks of base64 data for the document"
+    }
+  }
+}
+

@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false; // Deny by default
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == "olatokeoluwole@gmail.com" || request.auth.token.email == "olatoke@gmail.com");
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Admins
+    function isValidAdmin(data) {
+      return data.keys().hasAll(['email']) && data.keys().size() == 1
+          && data.email is string && data.email.size() <= 256;
+    }
+
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(adminId) && isValidAdmin(incoming());
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Schools
+    function isValidSchool(data) {
+      return data.keys().hasAll(['email', 'name', 'maxStudents', 'registeredStudentsCount', 'createdAt'])
+          && data.keys().size() == 5
+          && data.email is string && data.email.size() <= 256
+          && data.name is string && data.name.size() <= 256
+          && data.maxStudents is number && data.maxStudents >= 0
+          && data.registeredStudentsCount is number && data.registeredStudentsCount >= 0
+          && data.createdAt == request.time;
+    }
+
+    match /schools/{schoolId} {
+      allow read: if isAdmin() || (isSignedIn() && existing().email == request.auth.token.email);
+      allow list: if isAdmin() || (isSignedIn() && resource.data.email == request.auth.token.email);
+      allow create: if isAdmin() && isValidId(schoolId) && isValidSchool(incoming());
+      allow update: if isAdmin() || (
+        isSignedIn() && existing().email == request.auth.token.email &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['registeredStudentsCount']) &&
+        incoming().registeredStudentsCount == existing().registeredStudentsCount + 1 &&
+        existing().registeredStudentsCount < existing().maxStudents &&
+        incoming().email == existing().email &&
+        incoming().name == existing().name &&
+        incoming().maxStudents == existing().maxStudents &&
+        incoming().createdAt == existing().createdAt
+      );
+      allow delete: if isAdmin();
+    }
+
+    function isSchoolOwner(schoolId) {
+      return isSignedIn() && get(/databases/$(database)/documents/schools/$(schoolId)).data.email == request.auth.token.email;
+    }
+
+    // Students
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'createdAt']) && data.keys().size() <= 3
+          && data.name is string && data.name.size() <= 256
+          && data.createdAt == request.time
+          && (!data.keys().hasAny(['className']) || (data.className is string && data.className.size() <= 128));
+    }
+
+    match /schools/{schoolId}/students/{studentId} {
+      allow read: if isAdmin() || isSchoolOwner(schoolId);
+      allow list: if isAdmin() || isSchoolOwner(schoolId);
+      allow create: if isAdmin() || (
+        isValidId(schoolId) && isValidId(studentId) && isSchoolOwner(schoolId) && isValidStudent(incoming())
+        && existsAfter(/databases/$(database)/documents/schools/$(schoolId))
+      );
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Results
+    function isValidResult(data) {
+      return data.keys().hasAll(['studentName', 'subject', 'score', 'grade', 'remarks', 'createdAt']) && data.keys().size() <= 7
+          && data.studentName is string && data.studentName.size() <= 256
+          && data.subject is string && data.subject.size() <= 256
+          && data.score is number && data.score >= 0 && data.score <= 100
+          && data.grade is string && data.grade.size() <= 10
+          && data.remarks is string && data.remarks.size() <= 2000
+          && data.createdAt == request.time
+          && (!data.keys().hasAny(['class']) || (data.class is string && data.class.size() <= 128));
+    }
+
+    match /schools/{schoolId}/results/{resultId} {
+      allow read: if isAdmin() || isSchoolOwner(schoolId);
+      allow list: if isAdmin() || isSchoolOwner(schoolId);
+      allow create: if isAdmin() || (
+        isValidId(schoolId) && isValidId(resultId) && isSchoolOwner(schoolId) && isValidResult(incoming())
+      );
+      allow update: if false;
+      allow delete: if false;
+    }
+    // Knowledge Base
+    function isValidKnowledgeBase(data) {
+      return data.keys().hasAll(['subject', 'fileName', 'createdAt', 'chunksCount']) && data.keys().size() == 4
+          && data.subject is string && data.subject.size() <= 256
+          && data.fileName is string && data.fileName.size() <= 1024
+          && data.chunksCount is number && data.chunksCount > 0 && data.chunksCount <= 50
+          && data.createdAt == request.time;
+    }
+    function isValidKnowledgeBaseChunk(data) {
+      return data.keys().hasAll(['data']) && data.keys().size() == 1
+          && data.data is string && data.data.size() <= 1048000;
+    }
+
+    match /knowledgeBase/{docId} {
+      allow read, list: if isSignedIn();
+      allow create: if isAdmin() && isValidId(docId) && isValidKnowledgeBase(incoming());
+      allow update: if false;
+      allow delete: if isAdmin();
+      
+      match /chunks/{chunkId} {
+        allow read, list: if isSignedIn();
+        allow create: if isAdmin() && isValidId(chunkId) && isValidKnowledgeBaseChunk(incoming());
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}

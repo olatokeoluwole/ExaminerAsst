@@ -1,0 +1,6 @@
+{
+  "name": "WAEC Teacher Assistant",
+  "description": "An AI-powered WAEC examiner assistant to strictly mark student scripts using computer vision and language models.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
