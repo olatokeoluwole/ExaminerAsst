@@ -61,10 +61,15 @@ export default function LandingPage() {
                     <p className="text-sm lg:text-base font-bold uppercase tracking-widest text-[#1A1A1A]/70 max-w-2xl mx-auto mb-12 text-balance leading-relaxed">
                         Your trusted assistant examiner built strictly on WAEC grading standards to achieve consistent, objective, and detailed marking in seconds.
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                    <div className="flex flex-col items-center justify-center gap-6">
                         <Button size="lg" className="w-full sm:w-auto" onClick={handleAction}>
                             Enter Teacher Portal <ArrowRight className="ml-3 w-5 h-5" />
                         </Button>
+                        <p className="text-xs font-medium text-[#1A1A1A]/70 max-w-sm mt-4 text-balance">
+                            By creating an account or logging in, you agree to our{' '}
+                            <Link to="/terms" className="underline hover:text-[#1A1A1A]">Terms of Use</Link> and{' '}
+                            <Link to="/privacy" className="underline hover:text-[#1A1A1A]">Privacy Policy</Link>.
+                        </p>
                     </div>
                 </section>
 
