@@ -10,9 +10,10 @@ interface FileUploadProps {
   label?: string;
   files: File[];
   onRemoveFile: (index: number) => void;
+  capture?: 'user' | 'environment';
 }
 
-export function FileUpload({ onFilesSelected, maxFiles = 1, accept = {'image/*': ['.jpeg', '.jpg', '.png']}, label = "Drag & drop files", files, onRemoveFile }: FileUploadProps) {
+export function FileUpload({ onFilesSelected, maxFiles = 1, accept = {'image/*': ['.jpeg', '.jpg', '.png']}, label = "Drag & drop files", files, onRemoveFile, capture }: FileUploadProps) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     onFilesSelected(acceptedFiles);
   }, [onFilesSelected]);
@@ -22,6 +23,14 @@ export function FileUpload({ onFilesSelected, maxFiles = 1, accept = {'image/*':
     maxFiles,
     accept
   } as any);
+
+  const handleCameraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      onFilesSelected(Array.from(e.target.files));
+      // Reset input value to allow selecting the same file again if needed
+      e.target.value = '';
+    }
+  };
 
   return (
     <div className="w-full">
@@ -33,10 +42,27 @@ export function FileUpload({ onFilesSelected, maxFiles = 1, accept = {'image/*':
             files.length >= maxFiles && maxFiles === 1 ? "hidden" : "flex"
         )}
         >
-        <input {...getInputProps()} />
+        <input {...getInputProps({ capture })} />
         <UploadCloud className={cn("w-8 h-8 mb-2", isDragActive ? "text-[#1A1A1A]" : "text-[#1A1A1A]/50")} />
         <p className="text-sm font-bold uppercase tracking-widest text-[#1A1A1A]">{label}</p>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 mt-2">Supports images only</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#1A1A1A]/50 mt-2 mb-4">Supports images only</p>
+        
+        {/* Mobile Camera Option: We embed a clickable wrapper that uses an explicit camera input.
+            To avoid clicking the dropzone when clicking the button, we stop propagation. */}
+        <label 
+           className="relative z-10 block w-full sm:w-auto mt-2 cursor-pointer font-bold uppercase tracking-widest text-xs border-2 border-[#1A1A1A] py-2 px-4 shadow-[4px_4px_0_0_#1A1A1A] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#1A1A1A] transition-all bg-[#F7F6F2] text-[#1A1A1A] text-center"
+           onClick={(e) => e.stopPropagation()}
+        >
+           Take Photo
+           <input 
+             type="file" 
+             accept="image/*" 
+             capture="environment" 
+             className="hidden" 
+             onChange={handleCameraChange}
+             multiple={maxFiles > 1}
+           />
+        </label>
         </div>
 
         {files.length > 0 && (
